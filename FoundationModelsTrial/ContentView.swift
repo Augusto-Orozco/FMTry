@@ -15,19 +15,21 @@ struct ContentView: View {
     @State private var isLoading = false
 
     var body: some View {
-        VStack(spacing: 16) {
-            Text("🌍 Generador de Descripciones de Países")
+        VStack(spacing: 20) {
+            Text("Acerca de que pais te gustaria conocer?")
                 .font(.title2)
                 .bold()
+                .multilineTextAlignment(.center)
 
-            TextField("Escribe un país...", text: $country)
+            TextField("Escribe aqui tu eleccion...", text: $country)
                 .textFieldStyle(.roundedBorder)
                 .padding(.horizontal)
 
             Button(action: {
                 Task { await generateCountryDescription() }
             }) {
-                Text("Generar descripción")
+                Image(systemName: "arrow.up.circle.fill")
+                    .foregroundStyle(.tint)
             }
             .buttonStyle(.borderedProminent)
             .disabled(country.isEmpty || isLoading)
@@ -52,39 +54,30 @@ struct ContentView: View {
         descriptionText = ""
 
         do {
-            // 1) Obtener el modelo del sistema
             let model = SystemLanguageModel.default
 
-            // 2) Verificar disponibilidad
             guard model.availability == .available else {
                 descriptionText = "El modelo de lenguaje no está disponible en este dispositivo."
                 isLoading = false
                 return
             }
 
-            // 3) Crear una sesión. Usamos el inicializador con instrucciones (forma recomendada).
-            //    Puedes pasar un texto guía que sirva como "system prompt".
             let instructions = """
             Eres un asistente conciso y amigable. Responde en español.
             """
             let session = LanguageModelSession(instructions: instructions)
-
-            // 4) Prompt para la generación
+            
             let prompt = """
             Describe el país \(country) en unas 4 frases.
             Luego menciona tres lugares turísticos populares que todo visitante debería conocer,
             separados por comas y con una frase corta para cada uno.
             """
-
-            // 5) Pedir respuesta al modelo
+            
             let response = try await session.respond(to: prompt)
 
-            // 6) Obtener texto de la respuesta (la mayoría de ejemplos usan `content`)
-            //    Si tu versión del SDK usa otra propiedad, cámbiala (por ejemplo `.text`).
             descriptionText = response.content
 
         } catch {
-            // Muestra el mensaje de error para depuración
             descriptionText = "Error: \(error.localizedDescription)"
             print("FoundationModels error:", error)
         }
